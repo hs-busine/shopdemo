@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:mybatis-spring="http://mybatis.org/schema/mybatis-spring"
+	xsi:schemaLocation="http://mybatis.org/schema/mybatis-spring http://mybatis.org/schema/mybatis-spring-1.2.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.3.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.3.xsd">
+
+	<!-- Root Context: defines shared resources visible to all other web components -->
+	<!-- 
+		pom.xml의 dependency태그로 참조되는 라이브러리를 스프링에서 사용하는
+		◆ servlet-context.xml, ◆ root-context.xml 에서 설정하여 bean(객체)으로 사용하게 된다.
+
+		pom.xml에서 등록한 라이브러리의 대부분은 root-context.xml에서 설정한다.
+	 -->
+	<!-- pom.xml의 dependency구문에 의하여 다운받은 라이브러리에 존재하는 클래스들을 이용하여 bean(객체)을 생성한 의미. -->
+	<!-- 라이브러리 호출 시 id명은 보통 첫 글자 소문자에 카멜케이스로 굳어진 이름을 사용 -->
+	<bean id="hikariConfig" class="com.zaxxer.hikari.HikariConfig">
+		<!-- 
+		서버 배포할 시 아래 두 줄의 주석을 풀어야 한다. log4jdbc가 자잘한 부하가 많이 걸리므로.
+		<property name="driverClassName" value="oracle.jdbc.OracleDriver"></property>
+		<property name="jdbcUrl" value="jdbc:oracle:thin:@localhost:1521:xe"></property>
+		 -->
+		 <!-- 로그용 value값 수정 -->
+		<property name="driverClassName" value="net.sf.log4jdbc.sql.jdbcapi.DriverSpy"></property>
+		<property name="jdbcUrl" value="jdbc:log4jdbc:oracle:thin:@localhost:1521:xe"></property>
+		
+		<property name="username" value="spring"></property>
+		<property name="password" value="SPRING"></property>
+	</bean>
+	
+	<bean id="dataSource" class="com.zaxxer.hikari.HikariDataSource" destroy-method="close">
+		<constructor-arg ref="hikariConfig" />
+	</bean>
+	
+	<!-- 데이터베이스 연결과 SQL구문 실행에 대한 모든 기능을 가진 객체 -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSource"></property>
+	</bean>
+	
+	<!-- 트랜잭션 설정구문 -->
+	<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource"></property>
+	</bean>
+	
+	<tx:annotation-driven/>
+	
+	<!-- com.demp.mapper 패키지에 존재하는 Interface를 Mapper Interface로 만들어주는 설정구문. -->
+	<mybatis-spring:scan base-package="com.shopdemo.mapper"/>
+	
+	<!-- AOP관련 설정 -->
+	<context:annotation-config></context:annotation-config>
+	<context:component-scan base-package="com.shopdemo.aop" />
+	<aop:aspectj-autoproxy></aop:aspectj-autoproxy>
+	
+	<!-- 과거에는 mapper대신 dao 사용 -->
+	<!-- <context:component-scan base-package="com.shopdemo.dao" /> -->
+	<context:component-scan base-package="com.shopdemo.service" />
+	
+</beans>
